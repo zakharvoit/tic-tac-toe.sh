@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 
+SIZE=3
 LEFT=1
-RIGHT=3
+RIGHT=$(($LEFT + $SIZE - 1))
 TOP=1
-BOTTOM=3
+BOTTOM=$(($TOP + $SIZE - 1))
+
+declare -A field
+current_turn=x
 
 position() {
    oldstty=$(stty -g)
@@ -43,6 +47,84 @@ right() {
    [[ `col` < $BOTTOM ]] && tput cuf 1
 }
 
+insert() {
+   row=`row`
+   col=`col`
+   field[$row, $col]=$@
+   echo -n $@
+   left
+}
+
+check_winner() {
+   for ((i=$TOP; i <= $BOTTOM; i++)); do
+      first=${field[$i, $LEFT]}
+      all_same=1
+      for ((j=$LEFT; j <= $RIGHT; j++)); do
+         current=${field[$i, $j]}
+         if [[ $current != $first ]]; then
+            all_same=0
+            break
+         fi
+      done
+      if [[ $all_same != 0 && $first ]]; then
+         clear
+         echo "Winner $first"
+         exit 0
+      fi
+   done
+
+   for ((i=$LEFT; i <= $RIGHT; i++)); do
+      first=${field[$LEFT, $i]}
+      all_same=1
+      for ((j=$TOP; j <= $BOTTOM; j++)); do
+         current=${field[$j, $i]}
+         if [[ $current != $first ]]; then
+            all_same=0
+            break
+         fi
+      done
+      if [[ $all_same != 0 && $first ]]; then
+         clear
+         echo "Winner $first"
+         exit 0
+      fi
+   done
+
+   first=${field[$LEFT, $TOP]}
+   all_same=1
+   for ((s=0; s < $SIZE; s++)); do
+      i=$(($TOP + $s))
+      j=$(($LEFT + $s))
+      current=${field[$i, $j]}
+      if [[ $current != $first ]]; then
+         all_same=0
+         break
+      fi
+   done
+   if [[ $all_same != 0 && $first ]]; then
+      clear
+      echo "Winner $first"
+      exit 0
+   fi
+
+   first=${field[$LEFT, $RIGHT]}
+   all_same=1
+   for ((s=0; s < $SIZE; s++)); do
+      i=$(($TOP + $s))
+      j=$(($RIGHT - $s))
+      current=${field[$i, $j]}
+      if [[ $current != $first ]]; then
+         all_same=0
+         break
+      fi
+   done
+   if [[ $all_same != 0 && $first ]]; then
+      clear
+      echo "Winner $first"
+      exit 0
+   fi
+}
+
 clear
 echo "#####"
 echo "#   #"
@@ -56,8 +138,9 @@ do
       s) down ;;
       a) left ;;
       d) right ;;
-      o) echo -n o ;;
-      x) echo -n x ;;
+      o) if [[ $current_turn = o ]] ; then insert o; current_turn=x; fi ;;
+      x) if [[ $current_turn = x ]] ; then insert x; current_turn=o; fi ;;
       q) exit 0 ;;
    esac
+   check_winner
 done
