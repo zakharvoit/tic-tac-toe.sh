@@ -125,6 +125,10 @@ check_winner() {
    fi
 }
 
+current_cell_value() {
+   echo ${field[`row`, `col`]}
+}
+
 clear
 echo "#####"
 echo "#   #"
@@ -138,8 +142,8 @@ do
       s) down ;;
       a) left ;;
       d) right ;;
-      o) if [[ $current_turn = o ]] ; then insert o; current_turn=x; fi ;;
-      x) if [[ $current_turn = x ]] ; then insert x; current_turn=o; fi ;;
+      o) if [[ $current_turn = o && -z `current_cell_value` ]] ; then insert o; current_turn=x; fi ;;
+      x) if [[ $current_turn = x && -z `current_cell_value` ]] ; then insert x; current_turn=o; fi ;;
       q) exit 0 ;;
    esac
    check_winner
